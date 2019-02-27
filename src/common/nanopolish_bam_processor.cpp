@@ -46,7 +46,7 @@ BamProcessor::~BamProcessor()
     hts_idx_destroy(m_bam_idx);
 }
 
-void BamProcessor::parallel_run( std::function<void(const bam_hdr_t* hdr, 
+void BamProcessor::parallel_run( std::function<void(const bam_hdr_t* hdr,
                                            const bam1_t* record,
                                            size_t read_idx,
                                            int region_start,
@@ -76,7 +76,7 @@ void BamProcessor::parallel_run( std::function<void(const bam_hdr_t* hdr,
         exit(1);
     }
 #endif
-    
+
     // store number of threads so we can restore it after we're done
     int prev_num_threads = omp_get_num_threads();
     omp_set_num_threads(m_num_threads);
@@ -104,9 +104,12 @@ void BamProcessor::parallel_run( std::function<void(const bam_hdr_t* hdr,
             for(size_t i = 0; i < num_records_buffered; ++i) {
                 bam1_t* record = records[i];
                 size_t read_idx = num_reads_realigned + i;
-                if( (record->core.flag & BAM_FUNMAP) == 0 && record->core.qual >= m_min_mapping_quality) {
+                // below: commented out to allow for unmapped reads in the output
+                // modifications probably required also in other modules to accomodate for reference name missing
+                // currently only polya_esimator modified
+                // if( (record->core.flag & BAM_FUNMAP) == 0 && record->core.qual >= m_min_mapping_quality) {
                     func(m_hdr, record, read_idx, clip_start, clip_end);
-                }
+                // }
             }
 
             num_reads_realigned += num_records_buffered;
@@ -118,8 +121,8 @@ void BamProcessor::parallel_run( std::function<void(const bam_hdr_t* hdr,
 
     // restore number of threads
     omp_set_num_threads(prev_num_threads);
- 
-    // cleanup   
+
+    // cleanup
     for(size_t i = 0; i < records.size(); ++i) {
         bam_destroy1(records[i]);
     }

@@ -735,7 +735,16 @@ void estimate_polya_for_single_read(const ReadDB& read_db,
 {
     //----- load a squiggle read:
     std::string read_name = bam_get_qname(record);
-    std::string ref_name(hdr->target_name[record->core.tid]);
+    // Modification to accomodate unmapped reads
+    //std::string ref_name(hdr->target_name[record->core.tid]);
+    std::string ref_name;
+    if ((record->core.flag & BAM_FUNMAP) == 0) {
+      ref_name.assign(hdr->target_name[record->core.tid]);
+    }
+    else {
+      // Assign ref name "none" if read unmapped
+      ref_name.assign("none");
+    }
     size_t strand_idx = 0;
 
     //----- get length of suffix of the read that was softclipped:
